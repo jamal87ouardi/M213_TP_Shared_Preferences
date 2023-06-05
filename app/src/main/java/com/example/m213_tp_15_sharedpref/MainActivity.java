@@ -33,71 +33,82 @@ public class MainActivity extends AppCompatActivity {
         pass = findViewById(R.id.pass);
         btn = findViewById(R.id.button);
 
-        Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("http://13.48.3.250/Rest_Login/")
 
-                .addConverterFactory(GsonConverterFactory.create())
-                .build();
+        SharedPreferences sh = getSharedPreferences("MySharedPref", MODE_PRIVATE);
+        String n = sh.getString("nom", "");
 
-        CompteApi cApi = retrofit.create(CompteApi.class);
+        if(!n.isEmpty()) {
 
-        Call<List<Compte>> call = cApi.getComptes();
+            Toast.makeText(getApplicationContext(), "Already Logged in", Toast.LENGTH_LONG).show();
+            startActivity(new Intent(getApplicationContext(), Home.class));
 
-        call.enqueue(new Callback<List<Compte>>() {
+        }
 
-            @Override
-            public void onResponse(Call<List<Compte>> call, Response<List<Compte>> response) {
+        else {
 
-                comptes = response.body();
+            Retrofit retrofit = new Retrofit.Builder()
+                    .baseUrl("http://13.48.3.250/Rest_Login/")
 
-                Toast.makeText(getApplicationContext(), "Success API connexion", Toast.LENGTH_LONG).show();
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .build();
 
-            }
+            CompteApi cApi = retrofit.create(CompteApi.class);
 
-            @Override
-            public void onFailure(Call<List<Compte>> call, Throwable t) {
-                Toast.makeText(getApplicationContext(), "Error contacting API", Toast.LENGTH_LONG).show();
-            }
-        });
+            Call<List<Compte>> call = cApi.getComptes();
 
-        btn.setOnClickListener(new View.OnClickListener() {
+            call.enqueue(new Callback<List<Compte>>() {
 
-            @Override
-            public void onClick(View view) {
+                @Override
+                public void onResponse(Call<List<Compte>> call, Response<List<Compte>> response) {
 
-                SharedPreferences sharedPreferences = getSharedPreferences("MySharedPref", MODE_PRIVATE);
-                SharedPreferences.Editor myEdit = sharedPreferences.edit();
+                    comptes = response.body();
+
+                    Toast.makeText(getApplicationContext(), "Success API connexion", Toast.LENGTH_LONG).show();
+
+                }
+
+                @Override
+                public void onFailure(Call<List<Compte>> call, Throwable t) {
+                    Toast.makeText(getApplicationContext(), "Error contacting API", Toast.LENGTH_LONG).show();
+                }
+            });
+
+            btn.setOnClickListener(new View.OnClickListener() {
+
+                @Override
+                public void onClick(View view) {
+
+                    SharedPreferences sharedPreferences = getSharedPreferences("MySharedPref", MODE_PRIVATE);
+                    SharedPreferences.Editor myEdit = sharedPreferences.edit();
 
 
+                    int state = 0;
 
-                int state = 0;
+                    for (Compte c : comptes) {
 
-                for(Compte c : comptes) {
+                        if ((c.getEmail().equals(mail.getText().toString())) && (c.getPass().equals(pass.getText().toString()))) {
+                            state++;
+                            myEdit.putString("nom", c.getNom());
+                            myEdit.putString("prenom", c.getPrenom());
+                            myEdit.apply();
+                        }
 
-                    if((c.getEmail().equals(mail.getText().toString())) && (c.getPass().equals(pass.getText().toString()))) {
-                        state++;
-                        myEdit.putString("nom", c.getNom());
-                        myEdit.putString("prenom", c.getPrenom());
-                        myEdit.apply();
                     }
 
+                    if (state > 0) {
+
+
+                        // write all the data entered by the user in SharedPreference and apply
+
+
+                        startActivity(new Intent(getApplicationContext(), Home.class));
+
+                    } else {
+                        Toast.makeText(getApplicationContext(), "Login Failed", Toast.LENGTH_SHORT).show();
+
+                    }
                 }
-
-                if(state>0) {
-
-
-
-                    // write all the data entered by the user in SharedPreference and apply
-
-
-                    startActivity(new Intent(getApplicationContext(),Home.class));
-
-                }
-                else {
-                    Toast.makeText(getApplicationContext(), "Login Failed", Toast.LENGTH_SHORT).show();
-
-                }
-            }
-        });
+            });
+        }
     }
 }
